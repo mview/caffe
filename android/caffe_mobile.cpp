@@ -55,11 +55,37 @@ CaffeMobile *CaffeMobile::Get(const string &model_path,
   return caffe_mobile_;
 }
 
+// Get all available GPU devices
+static void get_gpus(vector<int>* gpus) {
+    int count = 0;
+#ifndef CPU_ONLY
+    count = Caffe::EnumerateDevices(true);
+#else
+    NO_GPU;
+#endif
+    for (int i = 0; i < count; ++i) {
+      gpus->push_back(i);
+    }
+}
+
 CaffeMobile::CaffeMobile(const string &model_path, const string &weights_path) {
   CHECK_GT(model_path.size(), 0) << "Need a model definition to score.";
   CHECK_GT(weights_path.size(), 0) << "Need model weights to score.";
 
-  Caffe::set_mode(Caffe::CPU);
+  // Set device id and mode
+  vector<int> gpus;
+  get_gpus(&gpus);
+  if (gpus.size() != 0) {
+#ifndef CPU_ONLY
+    LOG(INFO) << "Use GPU with device ID " << gpus[0] ;
+    Caffe::SetDevices(gpus);
+    Caffe::set_mode(Caffe::GPU);
+    Caffe::SetDevice(gpus[0]);
+#endif  // !CPU_ONLY
+  } else {
+    std::cout << "Use CPU" << std::endl;
+    Caffe::set_mode(Caffe::CPU);
+  }
 
   clock_t t_start = clock();
   net_.reset(new Net<float>(model_path, TEST, Caffe::GetDefaultDevice()));
