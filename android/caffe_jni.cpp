@@ -62,8 +62,10 @@ JNIEXPORT void JNICALL
 Java_com_sh1r0_caffe_1android_1lib_CaffeMobile_setNumThreads(JNIEnv *env,
                                                              jobject thiz,
                                                              jint numThreads) {
+#ifndef USE_BLIS
   int num_threads = numThreads;
   openblas_set_num_threads(num_threads);
+#endif
 }
 
 JNIEXPORT void JNICALL Java_com_sh1r0_caffe_1android_1lib_CaffeMobile_enableLog(
